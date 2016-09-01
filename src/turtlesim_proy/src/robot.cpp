@@ -17,9 +17,10 @@ turtlesim::Pose turtlesim_pose;
 const double PI = 3.1415;
 
 double degrees2radians(double degrees);
-void moveGoal(double x, double y,double segundos, double angulo_deseado);
+void moveGoal(double x, double y,double segundos);
 double getDistance(double x1,double x2, double y1, double y2);
 void poseCallback(const turtlesim::Pose::ConstPtr & pose_message);
+void rotar(double angulo);
 
 
 int main(int argc, char **argv){
@@ -60,7 +61,8 @@ int main(int argc, char **argv){
 			cin>>seconds;
 	}
 
-	moveGoal(x,y,seconds,degrees2radians(theta));
+	moveGoal(x,y,seconds);
+	rotar(degrees2radians(theta)-turtlesim_pose.theta);
 	cout<<"Termine, ¿quieres que lo haga de nuevo? (s/n): ";
 	cin>>respuesta;
 	while(respuesta != 's' && respuesta != 'n'){
@@ -76,6 +78,27 @@ int main(int argc, char **argv){
 	}
 }
 
+void rotar(double angulo){
+
+	//arbitrariamente decidi que el gira final durara 1 segundo, el cual en ese segundo girara
+		//la diferencia de angulos
+	geometry_msgs::Twist vel_msg;
+		ros::Rate loop_rate(10);
+		int i=10;
+		do{
+			vel_msg.angular.x=0;
+			vel_msg.angular.y=0;
+			vel_msg.angular.z= angulo;
+			velocity_publisher.publish(vel_msg);
+			ros::spinOnce();
+			loop_rate.sleep();
+			i--;
+		}
+		while(i>0);
+				vel_msg.angular.z=0;
+				velocity_publisher.publish(vel_msg);
+}
+
 double degrees2radians(double degrees){
 	return degrees*PI /180.0;
 }
@@ -84,7 +107,7 @@ double getDistance(double x1,double x2, double y1, double y2){
 	return sqrt(pow(x1-x2,2)+pow(y1-y2,2));
 }
 
-void moveGoal(double x, double y, double segundos, double angulo_deseado){
+void moveGoal(double x, double y, double segundos){
 	segundos=segundos-1;
 	geometry_msgs::Twist vel_msg;
 	ros::Rate loop_rate(10);
@@ -111,22 +134,6 @@ void moveGoal(double x, double y, double segundos, double angulo_deseado){
 	vel_msg.linear.x=0;
 	velocity_publisher.publish(vel_msg);
 	ros::spinOnce();
-	angulo_objetivo=angulo_deseado-turtlesim_pose.theta;
-	//arbitrariamente decidi que el gira final durara 1 segundo, el cual en ese segundo girara
-	//la diferencia de angulos
-	int i=10;
-	do{
-		vel_msg.angular.x=0;
-		vel_msg.angular.y=0;
-		vel_msg.angular.z= angulo_objetivo;
-		velocity_publisher.publish(vel_msg);
-		ros::spinOnce();
-		loop_rate.sleep();
-		i--;
-	}
-	while(i>0);
-			vel_msg.angular.z=0;
-			velocity_publisher.publish(vel_msg);
 }
 
 void poseCallback(const turtlesim::Pose::ConstPtr & pose_message){
